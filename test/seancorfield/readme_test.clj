@@ -91,7 +91,8 @@
                                               "test"
                                               (make-array FileAttribute 0))]
     (is (= [0 0 0 0]
-           (readme/-main "test/seancorfield/readme_example.md"
+           (readme/-main "test/seancorfield/
+           readme_example.md"
                          (-> target-dir
                              (.getParent)
                              (.toString))

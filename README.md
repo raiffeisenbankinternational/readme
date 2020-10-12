@@ -27,41 +27,29 @@ You can optionally provide a different file path for the readme and for the gene
 
 > Note: The output file path must be on your classpath so that the generated namespace can be `require`'d. The generated file will be deleted after running the tests (unless it cannot be `require`'d due to syntax errors, when it will be left in place for you to debug).
 
-If your `README.md` file contains a REPL session (using a `user=>` prompt) such as:
+If your `README.md` file contains a REPL session (using a `=> ` prompt, with space) such as:
 
     ```clojure
-    user=> some-expression
+    => some-expression
     result-1
-    user=> another-expression
+    => another-expression
     result-2
     ```
 
-This will generate tests of the form:
+This will generate tests file in target/src of the form:
 
 ``` clojure
 (deftest readme-N ; N is the line number
   (is (= result-1 some-expression))
   (is (= result-2 another-expression)))
 ```
+Each test is generated in separate file. 
 
-If your `README.md` file contains code blocks of the form:
+Tests are split into blocks of `exected` and `actual`. Each expected block starts with `=> ` and ends 
+when first line starts in beggninig. Actual block then continue untill end of file is reached or
+next expected block starts. 
 
-    ```clojure
-    some-expression
-    another-expression
-    => result
-    ```
-
-This will generate tests of the form:
-
-``` clojure
-(deftest readme-N ; N is the line number
-  (is (= result (do some-expression another-expression))))
-```
-
-Any additional code, without `user=>` or `=>`, will be added to the generated test namespace as-is with no direct test. This allows setup code to be shown in the `README.md` file, followed by specific tests.
-
-Each `clojure` code block will become a standalone test (if it contains `user=>` or `=>`). The tests may be executed in any order (by `clojure.test/run-tests`). Expressions that are not considered to be parts of any tests will be executed in order when the generated test namespace is loaded (by this `readme` library).
+Each `clojure` code block will become a standalone test (if it contains `=>`). The tests may be executed in any order (by `clojure.test/run-tests`). Expressions that are not considered to be parts of any tests will be executed in order when the generated test namespace is loaded (by this `readme` library).
 
 If you wish to add Clojure-formatted code to your README that is _ignored_ by this library, use whitespace between the triple backtick and `clojure`, like this:
 
@@ -77,11 +65,56 @@ You cannot use `ns` (or `in-ns`) forms in these examples, because the generated 
 Printed output is not considered when running tests. If the REPL session in your readme file needs to show output, it is recommended to show it as comments like this, so that it will be ignored by the generated tests:
 
 ```clojure
-user=> (println (+ 1 2 3))
+=> (println (+ 1 2 3))
 ;; prints:
 ; 6
 nil
 ```
+
+## Examples
+This is an example readme file.
+
+It has some setup:
+
+```clojure
+=> (:require [clojure.string :as str])
+```
+
+and an example using `=>`:
+
+```clojure
+=> (:require [clojure.string :as str])
+=> (str/starts-with? "example" "ex")
+true
+```
+
+and a series of examples using `=>`:
+
+```clojure
+=> (+ 1 2 3)
+;; comments
+6
+; are
+; ignored
+=> (* 1 2 3)
+6
+=> (- 1 2 3)
+-4
+=> (println "Hello!")
+;; prints:
+; Hello!
+nil
+```
+
+and another `=>` example with trailing forms:
+
+```clojure
+=> (:require [clojure.string :as str])
+=> (str/ends-with? "example" "nope")
+(do (println "This should print!")
+    false)
+```
+
 
 ## Development
 

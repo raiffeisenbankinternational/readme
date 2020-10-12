@@ -249,7 +249,9 @@
             (fn [readme-ns]
               (log/info "Running tests" readme-ns)
               (let [summary (try
-                              (ct/run-tests (symbol readme-ns)))]
+                              (ct/run-tests (symbol readme-ns))
+                              (catch Throwable t
+                                (log/error "Some tests failed" t)))]
                 (shutdown-agents)
                 (if (and summary
                          (number? (:fail summary))
