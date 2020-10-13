@@ -217,7 +217,8 @@
       :test-namespaces [])
     test-map))
 
-(defn -main
+
+(defn main
   "A useful default test behavior that can be invoked from the command
   line via `-m seancorfield.readme`
 
@@ -226,41 +227,44 @@
 
   Optional arguments for the readme file and the generated test can override
   the defaults."
+  [{:keys [readme-src target-dir root-ns exit-fn] :as ctx}]
+  (log/info "Scanning" readme-src "in" readme-src "with ns" root-ns)
+  (io/make-parents target-dir)
+  (when (.exists (io/file readme-src))
+    (let [{:keys [error test-namespaces]} (-> ctx
+                                              (readme->tests)
+                                              (tests->class))]
+      (log/info "Resolved namespaces:" test-namespaces)
+      (if error
+        (do
+          (log/error "Resolution error:" error)
+          ((:exit-fn ctx) 1))
+        (let [summary (try
+                        (apply ct/run-tests (mapv
+                                              #(symbol %1)
+                                              test-namespaces))
+                        (catch Throwable t
+                          (log/error "Some tests failed" t)))]
+          (if (and summary
+                   (number? (:fail summary))
+                   (number? (:error summary))
+                   (zero? (+ (:fail summary) (:error summary))))
+            (do
+              (-> (str target-dir "/" root-ns)
+                  (io/file)
+                  (.delete))
+              (exit-fn 0))
+            (exit-fn 1)))))))
+
+(defn -main
   [& [readme-src target-dir root-ns exit-fn]]
-  (let [ctx {:readme-src (or readme-src "README.md")
-             :target-dir (or target-dir "target/src")
-             :test-dir   (str target-dir "/" root-ns)
-             :root-ns    (or root-ns "readme-test")
-             :exit-fn    (or exit-fn (fn [status] (System/exit status)))}]
-
-    (io/make-parents target-dir)
-    (log/info "Scanning" readme-src "in" target-dir "with ns" root-ns)
-    (when (.exists (io/file readme-src))
-      (let [{:keys [error test-namespaces]} (-> ctx
-                                                (readme->tests)
-                                                (tests->class))]
-        (log/info "Resolved namespaces:" test-namespaces)
-
-        (if error
-          (do
-            (log/error "Resolution error:" error)
-            ((:exit-fn ctx) 1))
-          (mapv
-            (fn [readme-ns]
-              (log/info "Running tests" readme-ns)
-              (let [summary (try
-                              (ct/run-tests (symbol readme-ns))
-                              (catch Throwable t
-                                (log/error "Some tests failed" t)))]
-                (shutdown-agents)
-                (if (and summary
-                         (number? (:fail summary))
-                         (number? (:error summary))
-                         (zero? (+ (:fail summary) (:error summary))))
-                  (do
-                    (-> (str target-dir "/" root-ns)
-                        (io/file)
-                        (.delete))
-                    (exit-fn 0))
-                  (exit-fn 1))))
-            test-namespaces))))))
+  (let [target-dir-resolved (or target-dir "target/src")
+        root-ns-resolved (or root-ns "readme")
+        ctx {:readme-src (or readme-src "README.md")
+             :target-dir target-dir-resolved
+             :test-dir   (str target-dir-resolved "/" root-ns-resolved)
+             :root-ns    root-ns-resolved
+             :exit-fn    (or exit-fn (fn [status]
+                                       (shutdown-agents)
+                                       (System/exit status)))}]
+    (main ctx)))

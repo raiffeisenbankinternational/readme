@@ -90,9 +90,8 @@
   (let [target-dir (Files/createTempDirectory (Paths/get "target/src" (make-array String 0))
                                               "test"
                                               (make-array FileAttribute 0))]
-    (is (= [0 0 0 0]
-           (readme/-main "test/seancorfield/
-           readme_example.md"
+    (is (= 0
+           (readme/-main "test/seancorfield/readme_example.md"
                          (-> target-dir
                              (.getParent)
                              (.toString))
