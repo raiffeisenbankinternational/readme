@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>alpha-prosoft</groupId>
   <artifactId>readme</artifactId>
-  <version>1.4</version>
+  <version>1.5</version>
   <name>readme</name>
   <description>Turn README examples into executable tests.</description>
   <url>https://github.com/seancorfield/readme</url>
