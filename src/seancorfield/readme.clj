@@ -259,7 +259,7 @@
 (defn -main
   [& [readme-src target-dir root-ns exit-fn]]
   (let [target-dir-resolved (or target-dir "target/src")
-        root-ns-resolved (or root-ns "readme")
+        root-ns-resolved (str/replace (or root-ns "readme-test") "-" "_")
         ctx {:readme-src (or readme-src "README.md")
              :target-dir target-dir-resolved
              :test-dir   (str target-dir-resolved "/" root-ns-resolved)
