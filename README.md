@@ -29,12 +29,12 @@ You can optionally provide a different file path for the readme and for the gene
 
 If your `README.md` file contains a REPL session (using a `=> ` prompt, with space) such as:
 
-    ```clojure
-    => some-expression
-    result-1
-    => another-expression
-    result-2
-    ```
+```clojure
+=> some-expression
+result-1
+=> another-expression
+result-2
+```
 
 This will generate tests file in target/src of the form:
 
@@ -53,10 +53,19 @@ Each `clojure` code block will become a standalone test (if it contains `=>`). T
 
 If you wish to add Clojure-formatted code to your README that is _ignored_ by this library, use whitespace between the triple backtick and `clojure`, like this:
 
-    ``` clojure
-    ;; ignored by seancorfield/readme
-    (do-stuff 42)
-    ```
+``` clojure
+;; ignored by seancorfield/readme
+(do-stuff 42)
+```
+
+### deftest block
+
+If test starts with `(deftest` it will be user as is
+```clojure
+=> (deftest equal-test
+       (is (= 3)
+           (+ 1 2)))
+```
 
 ## Caveats
 

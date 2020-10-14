@@ -30,7 +30,16 @@
                                      "7"
                                      "=> (+ 3"
                                      "    4)"
-                                     "7"]))))
+                                     "7"])))
+  (is (= [{:actual   "(:require [clojure.string :as str])"
+           :expected ""}
+          {:actual   (str "(str/ends-with? \"example\" \"nope\")")
+           :expected (str "(do (println \"This should print!\")\n"
+                          "   false)")}]
+         (readme/test-lines->blocks ["=> (:require [clojure.string :as str])"
+                                     "=> (str/ends-with? \"example\" \"nope\")"
+                                     "(do (println \"This should print!\")"
+                                     "   false)"]))))
 
 (deftest test-class-file
   (is (= (str "(ns root.rtest\n"

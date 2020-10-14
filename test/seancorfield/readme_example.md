@@ -40,3 +40,9 @@ and another `=>` example with trailing forms:
 (do (println "This should print!")
     false)
 ```
+
+```clojure
+=> (deftest equal-test
+       (is (= 3)
+           (+ 1 2)))
+```

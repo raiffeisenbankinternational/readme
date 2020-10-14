@@ -103,10 +103,10 @@
          blocks []
          in-actual false]
     (if line
-      (cond (str/starts-with? line "=>") (recur lines
-                                                (conj blocks {:actual   (subs line 3)
-                                                              :expected ""})
-                                                true)
+      (cond (str/starts-with? line "=> ") (recur lines
+                                                 (conj blocks {:actual   (subs line 3)
+                                                               :expected ""})
+                                                 true)
             (and (str/starts-with? line "   ")
                  in-actual) (recur lines
                                    (conj (pop blocks)
@@ -114,13 +114,19 @@
                                                  :actual
                                                  #(str % "\n" (subs line 3))))
                                    true)
+            (and (str/starts-with? line "   ")
+                 (not in-actual)) (recur lines
+                                         (conj (pop blocks)
+                                               (update (peek blocks)
+                                                       :expected
+                                                       #(str % "\n" line)))
+                                         true)
             (and (not (str/starts-with? line "   "))
                  in-actual) (recur lines
                                    (conj (pop blocks)
                                          (assoc (peek blocks)
                                            :expected
                                            line))
-
                                    false)
             (and (not (str/starts-with? line "   "))
                  (not in-actual)) (recur lines
@@ -141,12 +147,35 @@
            ""
            others))))
 
+(defn form-test-content
+  [{:keys [body test-ns header]}]
+  (log/info body)
+  (loop [[{:keys [expected actual] :as block} & blocks] body
+         block-nr 1
+         out (str "(ns " test-ns header ")\n"
+                  "(require '[clojure.test :refer :all])\n\n")]
+    (if block
+      (cond
+        (str/starts-with? actual "(deftest") (recur
+                                               blocks
+                                               (inc block-nr)
+                                               (str out "\n\n" actual))
+        :else (recur
+                blocks
+                (inc block-nr)
+                (str out "\n\n"
+                     "(deftest test-" block-nr " \n"
+                     "   (is (= " (with-ident expected "          ") "\n"
+                     "          " (with-ident actual "          ") ")))")))
+      out)))
+
+
 (defn test->class
   [{:keys [test-lines test-key root-ns test-name] :as ctx}]
   (let [test-ns (str root-ns "." test-name)
         test-blocks (test-lines->blocks test-lines)]
 
-    (println test-blocks)
+    (log/info test-blocks)
     (if (some #(contains? % :error) test-blocks)
       (do (log/error "Failed to parse test block " test-key)
           (assoc ctx :error "Parsing failed"))
@@ -161,19 +190,9 @@
         (assoc
           ctx
           :test-ns test-ns
-          :test-content (loop [[block & blocks] body
-                               block-nr 1
-                               out (str "(ns " test-ns header ")\n"
-                                        "(require '[clojure.test :refer :all])\n\n")]
-                          (if block
-                            (recur
-                              blocks
-                              (inc block-nr)
-                              (str out "\n\n"
-                                   "(deftest test-" block-nr " \n"
-                                   "   (is (= " (with-ident (:expected block) "          ") "\n"
-                                   "          " (with-ident (:actual block) "          ") ")))"))
-                            out)))))))
+          :test-content (form-test-content {:header  header
+                                            :body    body
+                                            :test-ns test-ns}))))))
 
 
 
